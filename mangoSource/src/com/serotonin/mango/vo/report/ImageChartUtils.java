@@ -18,16 +18,12 @@
  */
 package com.serotonin.mango.vo.report;
 
-import java.awt.Color;
-import java.awt.Paint;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Date;
-
-import javax.servlet.http.HttpServletResponse;
-
+import com.serotonin.ShouldNeverHappenException;
+import com.serotonin.io.StreamUtils;
+import com.serotonin.mango.db.dao.SystemSettingsDao;
+import com.serotonin.mango.rt.dataImage.PointValueTime;
+import com.serotonin.mango.util.mindprod.StripEntities;
+import com.serotonin.util.StringUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
@@ -41,12 +37,13 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.TextAnchor;
 
-import com.serotonin.ShouldNeverHappenException;
-import com.serotonin.io.StreamUtils;
-import com.serotonin.mango.db.dao.SystemSettingsDao;
-import com.serotonin.mango.rt.dataImage.PointValueTime;
-import com.serotonin.mango.util.mindprod.StripEntities;
-import com.serotonin.util.StringUtils;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Date;
 
 /**
  * @author Matthew Lohbihler
@@ -57,18 +54,19 @@ public class ImageChartUtils {
 
     public static void writeChart(PointTimeSeriesCollection pointTimeSeriesCollection, OutputStream out, int width,
             int height) throws IOException {
-        writeChart(pointTimeSeriesCollection, pointTimeSeriesCollection.hasMultiplePoints(), out, width, height);
+        writeChartFull(pointTimeSeriesCollection, pointTimeSeriesCollection.hasMultiplePoints(), out, width, height, "", "");
     }
 
     public static byte[] getChartData(PointTimeSeriesCollection pointTimeSeriesCollection, int width, int height) {
         return getChartData(pointTimeSeriesCollection, pointTimeSeriesCollection.hasMultiplePoints(), width, height);
     }
 
-    public static byte[] getChartData(PointTimeSeriesCollection pointTimeSeriesCollection, boolean showLegend,
-            int width, int height) {
+    public static byte[] getChartData(PointTimeSeriesCollection pointTimeSeriesCollection,
+                                      int width, int height, String xlabel, String ylabel) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            writeChart(pointTimeSeriesCollection, showLegend, out, width, height);
+            writeChartFull(pointTimeSeriesCollection, pointTimeSeriesCollection.hasMultiplePoints(), out, width, height,
+                    xlabel, ylabel);
             return out.toByteArray();
         }
         catch (IOException e) {
@@ -76,8 +74,20 @@ public class ImageChartUtils {
         }
     }
 
-    public static void writeChart(PointTimeSeriesCollection pointTimeSeriesCollection, boolean showLegend,
-            OutputStream out, int width, int height) throws IOException {
+    public static byte[] getChartData(PointTimeSeriesCollection pointTimeSeriesCollection, boolean showLegend,
+            int width, int height) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            writeChartFull(pointTimeSeriesCollection, showLegend, out, width, height, "", "");
+            return out.toByteArray();
+        }
+        catch (IOException e) {
+            throw new ShouldNeverHappenException(e);
+        }
+    }
+
+    public static void writeChartFull(PointTimeSeriesCollection pointTimeSeriesCollection, boolean showLegend,
+                                      OutputStream out, int width, int height, String xlabel, String ylabel) throws IOException {
 
         JFreeChart chart = ChartFactory.createTimeSeriesChart(null, null, null, null, showLegend, false, false);
         chart.setBackgroundPaint(SystemSettingsDao.getColour(SystemSettingsDao.CHART_BACKGROUND_COLOUR));
@@ -87,6 +97,8 @@ public class ImageChartUtils {
         Color gridlines = SystemSettingsDao.getColour(SystemSettingsDao.PLOT_GRIDLINE_COLOUR);
         plot.setDomainGridlinePaint(gridlines);
         plot.setRangeGridlinePaint(gridlines);
+        plot.getDomainAxis().setLabel(xlabel);
+        plot.getRangeAxis().setLabel(ylabel);
 
         double numericMin = 0;
         double numericMax = 1;

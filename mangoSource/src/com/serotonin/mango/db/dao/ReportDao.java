@@ -18,42 +18,31 @@
  */
 package com.serotonin.mango.db.dao;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-
-import org.springframework.jdbc.core.RowCallbackHandler;
-
 import com.serotonin.ShouldNeverHappenException;
 import com.serotonin.db.spring.GenericRowMapper;
 import com.serotonin.mango.Common;
 import com.serotonin.mango.DataTypes;
 import com.serotonin.mango.db.DatabaseAccess;
 import com.serotonin.mango.rt.dataImage.PointValueTime;
-import com.serotonin.mango.rt.dataImage.types.AlphanumericValue;
-import com.serotonin.mango.rt.dataImage.types.BinaryValue;
-import com.serotonin.mango.rt.dataImage.types.ImageValue;
-import com.serotonin.mango.rt.dataImage.types.MangoValue;
-import com.serotonin.mango.rt.dataImage.types.MultistateValue;
-import com.serotonin.mango.rt.dataImage.types.NumericValue;
+import com.serotonin.mango.rt.dataImage.types.*;
 import com.serotonin.mango.rt.event.EventInstance;
 import com.serotonin.mango.rt.event.type.EventType;
 import com.serotonin.mango.view.text.TextRenderer;
 import com.serotonin.mango.vo.DataPointVO;
 import com.serotonin.mango.vo.UserComment;
-import com.serotonin.mango.vo.report.ReportDataStreamHandler;
-import com.serotonin.mango.vo.report.ReportDataValue;
-import com.serotonin.mango.vo.report.ReportInstance;
-import com.serotonin.mango.vo.report.ReportPointInfo;
-import com.serotonin.mango.vo.report.ReportUserComment;
-import com.serotonin.mango.vo.report.ReportVO;
+import com.serotonin.mango.vo.report.*;
 import com.serotonin.util.SerializationHelper;
 import com.serotonin.util.StringUtils;
 import com.serotonin.web.i18n.I18NUtils;
 import com.serotonin.web.taglib.Functions;
+import org.springframework.jdbc.core.RowCallbackHandler;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * @author Matthew Lohbihler
@@ -195,18 +184,26 @@ public class ReportDao extends BaseDao {
      * This method should only be called by the ReportWorkItem.
      */
     private static final String REPORT_INSTANCE_POINTS_INSERT = "insert into reportInstancePoints " //
-            + "(reportInstanceId, dataSourceName, pointName, dataType, startValue, textRenderer, colour, consolidatedChart) "
-            + "values (?,?,?,?,?,?,?,?)";
+            + "(reportInstanceId, dataSourceName, pointName, dataType, startValue, textRenderer, colour, consolidatedChart, "
+            + "xlabel, ylabel) values (?,?,?,?,?,?,?,?,?,?)";
 
     public static class PointInfo {
         private final DataPointVO point;
         private final String colour;
         private final boolean consolidatedChart;
+        private String xlabel;
+        private String ylabel;
 
         public PointInfo(DataPointVO point, String colour, boolean consolidatedChart) {
             this.point = point;
             this.colour = colour;
             this.consolidatedChart = consolidatedChart;
+        }
+
+        public PointInfo(DataPointVO point, String colour, boolean consolidatedChart, String xlabel, String ylabel) {
+            this(point, colour, consolidatedChart);
+            this.xlabel = xlabel;
+            this.ylabel = ylabel;
         }
 
         public DataPointVO getPoint() {
@@ -219,6 +216,14 @@ public class ReportDao extends BaseDao {
 
         public boolean isConsolidatedChart() {
             return consolidatedChart;
+        }
+
+        public String getXlabel() {
+            return xlabel;
+        }
+
+        public String getYlabel() {
+            return ylabel;
         }
     }
 
@@ -275,8 +280,9 @@ public class ReportDao extends BaseDao {
                     new Object[] { instance.getId(), point.getDeviceName(), name, dataType,
                             DataTypes.valueToString(startValue),
                             SerializationHelper.writeObject(point.getTextRenderer()), pointInfo.getColour(),
-                            boolToChar(pointInfo.isConsolidatedChart()) }, new int[] { Types.INTEGER, Types.VARCHAR,
-                            Types.VARCHAR, Types.INTEGER, Types.VARCHAR, Types.BLOB, Types.VARCHAR, Types.CHAR });
+                            boolToChar(pointInfo.isConsolidatedChart()), pointInfo.getXlabel(), pointInfo.getYlabel() },
+                            new int[] { Types.INTEGER, Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.VARCHAR,
+                                    Types.BLOB, Types.VARCHAR, Types.CHAR, Types.VARCHAR, Types.VARCHAR });
 
             // Insert the reportInstanceData records
             String insertSQL = "insert into reportInstanceData " + "  select id, " + reportPointId
@@ -410,7 +416,7 @@ public class ReportDao extends BaseDao {
      * ordered), and sorted by time ascending.
      */
     private static final String REPORT_INSTANCE_POINT_SELECT = "select id, dataSourceName, pointName, dataType, " // 
-            + "startValue, textRenderer, colour, consolidatedChart from reportInstancePoints ";
+            + "startValue, textRenderer, colour, consolidatedChart, xlabel, ylabel from reportInstancePoints ";
     private static final String REPORT_INSTANCE_DATA_SELECT = "select rd.pointValue, rda.textPointValueShort, " //
             + "  rda.textPointValueLong, rd.ts, rda.sourceValue "
             + "from reportInstanceData rd "
@@ -434,6 +440,8 @@ public class ReportDao extends BaseDao {
                                 .getBinaryStream()));
                         rp.setColour(rs.getString(7));
                         rp.setConsolidatedChart(charToBool(rs.getString(8)));
+                        rp.setXlabel(rs.getString(9));
+                        rp.setYlabel(rs.getString(10));
                         return rp;
                     }
                 });

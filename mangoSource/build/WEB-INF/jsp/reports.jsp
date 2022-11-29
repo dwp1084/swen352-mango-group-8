@@ -396,8 +396,11 @@
     function getReportPointIdsArray() {
         var points = new Array();
         for (var i=0; i<reportPointsArray.length; i++)
-            points[points.length] = { pointId: reportPointsArray[i].pointId, colour: reportPointsArray[i].colour,
-        		    consolidatedChart: reportPointsArray[i].consolidatedChart };
+            points[points.length] = { pointId: reportPointsArray[i].pointId,
+              colour: reportPointsArray[i].colour,
+              consolidatedChart: reportPointsArray[i].consolidatedChart,
+              xlabel: reportPointsArray[i].xlabel,
+              ylabel: reportPointsArray[i].ylabel};
         return points;
     }
     

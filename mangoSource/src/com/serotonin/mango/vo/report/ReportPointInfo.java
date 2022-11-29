@@ -33,6 +33,8 @@ public class ReportPointInfo {
     private TextRenderer textRenderer;
     private String colour;
     private boolean consolidatedChart;
+    private String xlabel;
+    private String ylabel;
 
     public String getExtendedName() {
         return deviceName + " - " + pointName;
@@ -100,5 +102,21 @@ public class ReportPointInfo {
 
     public void setConsolidatedChart(boolean consolidatedChart) {
         this.consolidatedChart = consolidatedChart;
+    }
+
+    public String getXlabel() {
+        return xlabel;
+    }
+
+    public void setXlabel(String xlabel) {
+        this.xlabel = xlabel;
+    }
+
+    public String getYlabel() {
+        return ylabel;
+    }
+
+    public void setYlabel(String ylabel) {
+        this.ylabel = ylabel;
     }
 }

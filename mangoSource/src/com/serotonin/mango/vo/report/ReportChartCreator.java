@@ -18,24 +18,6 @@
  */
 package com.serotonin.mango.vo.report;
 
-import java.awt.Color;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.jfree.data.time.Second;
-import org.jfree.data.time.TimeSeries;
-
 import com.serotonin.InvalidArgumentException;
 import com.serotonin.ShouldNeverHappenException;
 import com.serotonin.mango.Common;
@@ -44,24 +26,24 @@ import com.serotonin.mango.db.dao.ReportDao;
 import com.serotonin.mango.rt.dataImage.PointValueTime;
 import com.serotonin.mango.rt.dataImage.types.MangoValue;
 import com.serotonin.mango.rt.event.EventInstance;
-import com.serotonin.mango.view.stats.AbstractDataQuantizer;
-import com.serotonin.mango.view.stats.AnalogStatistics;
-import com.serotonin.mango.view.stats.BinaryDataQuantizer;
-import com.serotonin.mango.view.stats.DataQuantizerCallback;
-import com.serotonin.mango.view.stats.MultistateDataQuantizer;
-import com.serotonin.mango.view.stats.NumericDataQuantizer;
-import com.serotonin.mango.view.stats.StartsAndRuntime;
-import com.serotonin.mango.view.stats.StartsAndRuntimeList;
-import com.serotonin.mango.view.stats.StatisticsGenerator;
-import com.serotonin.mango.view.stats.ValueChangeCounter;
+import com.serotonin.mango.view.stats.*;
 import com.serotonin.mango.view.text.TextRenderer;
 import com.serotonin.mango.vo.UserComment;
 import com.serotonin.mango.web.email.MessageFormatDirective;
 import com.serotonin.mango.web.email.UsedImagesDirective;
 import com.serotonin.util.ColorUtils;
 import com.serotonin.web.taglib.DateFunctions;
-
 import freemarker.template.Template;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.jfree.data.time.Second;
+import org.jfree.data.time.TimeSeries;
+
+import java.awt.*;
+import java.io.*;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.*;
 
 /**
  * @author Matthew Lohbihler
@@ -147,7 +129,8 @@ public class ReportChartCreator {
             if (ptsc.hasData()) {
                 if (inlinePrefix != null)
                     model.put("chartName", inlinePrefix + pointStat.getChartName());
-                pointStat.setImageData(ImageChartUtils.getChartData(ptsc, POINT_IMAGE_WIDTH, POINT_IMAGE_HEIGHT));
+                pointStat.setImageData(ImageChartUtils.getChartData(ptsc, POINT_IMAGE_WIDTH, POINT_IMAGE_HEIGHT,
+                        pointStat.getXlabel(), pointStat.getYlabel()));
             }
         }
 
@@ -282,6 +265,8 @@ public class ReportChartCreator {
         private TimeSeries numericTimeSeries;
         private Color numericTimeSeriesColor;
         private DiscreteTimeSeries discreteTimeSeries;
+        private String xlabel;
+        private String ylabel;
         private byte[] imageData;
 
         public PointStatistics(int reportPointId) {
@@ -421,6 +406,22 @@ public class ReportChartCreator {
         public String getChartName() {
             return "reportPointChart" + reportPointId + ".png";
         }
+
+        public String getXlabel() {
+            return xlabel;
+        }
+
+        public void setXlabel(String xlabel) {
+            this.xlabel = xlabel;
+        }
+
+        public String getYlabel() {
+            return ylabel;
+        }
+
+        public void setYlabel(String ylabel) {
+            this.ylabel = ylabel;
+        }
     }
 
     public static class StartsAndRuntimeWrapper {
@@ -500,6 +501,8 @@ public class ReportChartCreator {
             if (pointInfo.getStartValue() != null)
                 point.setStartValue(pointInfo.getTextRenderer().getText(pointInfo.getStartValue(),
                         TextRenderer.HINT_FULL));
+            point.setXlabel(pointInfo.getXlabel());
+            point.setYlabel(pointInfo.getYlabel());
             pointStatistics.add(point);
 
             Color colour = null;
