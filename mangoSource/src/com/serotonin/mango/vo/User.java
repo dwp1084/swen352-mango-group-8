@@ -18,23 +18,8 @@
  */
 package com.serotonin.mango.vo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionBindingListener;
-
 import com.serotonin.ShouldNeverHappenException;
-import com.serotonin.json.JsonArray;
-import com.serotonin.json.JsonException;
-import com.serotonin.json.JsonObject;
-import com.serotonin.json.JsonReader;
-import com.serotonin.json.JsonRemoteEntity;
-import com.serotonin.json.JsonRemoteProperty;
-import com.serotonin.json.JsonSerializable;
-import com.serotonin.json.JsonValue;
+import com.serotonin.json.*;
 import com.serotonin.mango.Common;
 import com.serotonin.mango.db.dao.DataPointDao;
 import com.serotonin.mango.db.dao.DataSourceDao;
@@ -53,6 +38,13 @@ import com.serotonin.mango.web.dwr.beans.TestingUtility;
 import com.serotonin.util.StringUtils;
 import com.serotonin.web.dwr.DwrResponseI18n;
 import com.serotonin.web.i18n.LocalizableMessage;
+
+import javax.servlet.http.HttpSessionBindingEvent;
+import javax.servlet.http.HttpSessionBindingListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @JsonRemoteEntity
 public class User implements SetPointSource, HttpSessionBindingListener, JsonSerializable {
@@ -91,7 +83,7 @@ public class User implements SetPointSource, HttpSessionBindingListener, JsonSer
     private transient Map<String, byte[]> reportImageData;
     private transient PublisherVO<? extends PublishedPointVO> editPublisher;
     private transient ImportTask importTask;
-    private transient boolean muted = false;
+    private transient boolean muted = true;
     private transient DataExportDefinition dataExportDefinition;
     private transient Map<String, Object> attributes = new HashMap<String, Object>();
 
